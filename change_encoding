@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Change to directory with test data
+DIRECTORY=""
+
+# Search for .tex files in test_data directory and add to an array.
+TEX_FILES=$(find "$DIRECTORY" -name '*.tex')
+TEX_FILES=${TEX_FILES[0]}
+IFS=$'\n' read -rd '' -a TEX_FILES<<<"$TEX_FILES"
+
+
+# Iterates through .tex files and changes the encoding from iso-8859-1 to utf-8.
+# This is done in order for the python script to open and recognize the file.
+for f in "${TEX_FILES[@]}"; do
+  str=$(echo "$(file -I "$f")" | awk 'BEGIN{FS="="}{print $2}')
+  if [ "$str" == "iso-8859-1" ] ; then
+    iconv -f "$str" -t "utf-8" "$f" > "${f}.utf" &&
+    mv -f "${f}.utf" "$f"
+  fi
+  # Delete files that have an unknown encoding. (Cannot be changed to utf-8).
+  if [ "$str" == "unknown-8bit" ] ; then
+    echo "$f"
+    rm "$f"
+  fi
+done
